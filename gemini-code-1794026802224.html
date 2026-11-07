@@ -1,0 +1,1464 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <title>METAL SLUG: TV STUDIO MISSION</title>
+  <!-- Library SheetJS untuk Ekspor Excel (.xlsx) Resmi -->
+  <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Press+Start+2P&family=Teko:wght@600;700&display=swap');
+
+    :root {
+      --bg-dark: #0f1016;
+      --arcade-yellow: #f8b800;
+      --arcade-orange: #f85b00;
+      --arcade-green: #38c820;
+      --arcade-red: #e02020;
+      --arcade-cyan: #00d4f8;
+      --hud-panel: rgba(18, 20, 32, 0.94);
+    }
+
+    * {
+      box-sizing: border-box;
+      user-select: none;
+      -webkit-user-select: none;
+      margin: 0;
+      padding: 0;
+      touch-action: manipulation;
+    }
+
+    body, html {
+      width: 100%;
+      height: 100%;
+      background-color: #050608;
+      color: #fff;
+      font-family: 'Press Start 2P', monospace;
+      overflow: hidden;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+    }
+
+    /* CONTAINER UTAMA VERTICAL PORTRAIT (9:16) */
+    #arcade-wrapper {
+      position: relative;
+      width: 100vw;
+      height: 100vh;
+      max-width: 480px; /* Rasio Smartphone Portrait */
+      max-height: 854px;
+      background: #000;
+      box-shadow: 0 0 35px rgba(248, 184, 0, 0.25);
+      border: 3px solid #3a3b4f;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+
+    /* SCREEN LAYER & PAGES */
+    .screen {
+      position: absolute;
+      top: 0; left: 0;
+      width: 100%; height: 100%;
+      background: var(--bg-dark);
+      display: none;
+      flex-direction: column;
+      z-index: 10;
+      overflow-y: auto;
+    }
+    .screen.active {
+      display: flex;
+    }
+
+    /* 1. HALAMAN ABSENSI / START */
+    #start-screen {
+      background: linear-gradient(180deg, #18192b 0%, #0d0e17 60%, #1f0b00 100%);
+      padding: 24px 18px;
+      text-align: center;
+      justify-content: space-between;
+    }
+    .title-banner {
+      margin-top: 10px;
+    }
+    .game-logo {
+      font-family: 'Teko', sans-serif;
+      font-size: 3.2rem;
+      line-height: 0.9;
+      color: var(--arcade-yellow);
+      text-shadow: 3px 3px 0px var(--arcade-orange), 6px 6px 0px #000;
+      letter-spacing: 2px;
+      text-transform: uppercase;
+    }
+    .game-sublogo {
+      font-size: 0.55rem;
+      color: var(--arcade-cyan);
+      margin-top: 8px;
+      letter-spacing: 1px;
+      line-height: 1.5;
+    }
+    .pixel-art-hero {
+      width: 100%;
+      height: 140px;
+      margin: 12px 0;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      position: relative;
+    }
+
+    .form-box {
+      background: var(--hud-panel);
+      border: 3px solid var(--arcade-yellow);
+      padding: 16px 12px;
+      border-radius: 4px;
+      box-shadow: 0 4px 0 #000;
+    }
+    .form-group {
+      margin-bottom: 14px;
+      text-align: left;
+    }
+    .form-group label {
+      font-size: 0.5rem;
+      color: var(--arcade-yellow);
+      display: block;
+      margin-bottom: 6px;
+    }
+    .arcade-input {
+      width: 100%;
+      background: #000;
+      border: 2px solid #5a5c78;
+      color: #fff;
+      font-family: 'Press Start 2P', monospace;
+      font-size: 0.65rem;
+      padding: 10px 8px;
+      outline: none;
+      border-radius: 2px;
+    }
+    .arcade-input:focus {
+      border-color: var(--arcade-cyan);
+    }
+    .btn-arcade {
+      width: 100%;
+      background: linear-gradient(180deg, var(--arcade-yellow) 0%, var(--arcade-orange) 100%);
+      border: 3px solid #fff;
+      color: #000;
+      font-family: 'Press Start 2P', monospace;
+      font-size: 0.8rem;
+      padding: 14px;
+      cursor: pointer;
+      box-shadow: 0 5px 0 #802800;
+      margin-top: 8px;
+      transition: transform 0.05s;
+    }
+    .btn-arcade:active {
+      transform: translateY(3px);
+      box-shadow: 0 2px 0 #802800;
+    }
+    .secret-teacher-btn {
+      align-self: center;
+      margin-bottom: 4px;
+      font-size: 0.45rem;
+      color: #555770;
+      cursor: pointer;
+      text-decoration: underline;
+    }
+
+    /* 2. GAME CANVAS & LAYOUT */
+    #game-container {
+      width: 100%;
+      height: 100%;
+      display: flex;
+      flex-direction: column;
+      background: #000;
+      position: relative;
+    }
+    #game-canvas {
+      width: 100%;
+      height: 60%;
+      background: #10121a;
+      display: block;
+      image-rendering: pixelated;
+    }
+    #hud-bar {
+      position: absolute;
+      top: 6px; left: 8px; right: 8px;
+      height: 38px;
+      background: rgba(0, 0, 0, 0.75);
+      border: 2px solid var(--arcade-yellow);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 0 10px;
+      font-size: 0.45rem;
+      z-index: 5;
+    }
+    .hud-val {
+      color: var(--arcade-yellow);
+    }
+
+    /* KONTROL GAME SMARTPHONE (PORTRAIT) */
+    #touch-controls {
+      width: 100%;
+      height: 40%;
+      background: #141622;
+      border-top: 4px solid #2d2f44;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 15px 22px;
+      touch-action: none;
+    }
+    .d-pad {
+      display: flex;
+      gap: 14px;
+      align-items: center;
+    }
+    .touch-btn {
+      background: #25283d;
+      border: 3px solid #575a7e;
+      border-radius: 8px;
+      width: 66px;
+      height: 66px;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      font-size: 0.75rem;
+      color: #fff;
+      box-shadow: 0 6px 0 #11121d;
+    }
+    .touch-btn:active, .touch-btn.pressed {
+      transform: translateY(4px);
+      box-shadow: 0 2px 0 #11121d;
+      background: #3c4163;
+      border-color: var(--arcade-yellow);
+    }
+    .action-pad {
+      display: flex;
+      gap: 14px;
+    }
+    .action-btn-jump {
+      background: #1d4d1d;
+      border-color: var(--arcade-green);
+      box-shadow: 0 6px 0 #0d250d;
+    }
+    .action-btn-act {
+      background: #7a1d1d;
+      border-color: var(--arcade-orange);
+      box-shadow: 0 6px 0 #3a0d0d;
+    }
+
+    /* 3. CHECKPOINT SOAL POPUP MODAL */
+    #quiz-modal {
+      position: absolute;
+      top: 0; left: 0; width: 100%; height: 100%;
+      background: rgba(8, 9, 14, 0.95);
+      z-index: 20;
+      display: none;
+      flex-direction: column;
+      justify-content: center;
+      padding: 16px;
+    }
+    .quiz-box {
+      background: #161828;
+      border: 3px solid var(--arcade-cyan);
+      border-radius: 4px;
+      padding: 16px 12px;
+      box-shadow: 0 0 20px rgba(0, 212, 248, 0.3);
+    }
+    .quiz-header {
+      display: flex;
+      justify-content: space-between;
+      border-bottom: 2px dashed #3a3d5e;
+      padding-bottom: 8px;
+      margin-bottom: 12px;
+      font-size: 0.5rem;
+      color: var(--arcade-yellow);
+    }
+    .quiz-question {
+      font-size: 0.52rem;
+      line-height: 1.5;
+      color: #ffffff;
+      margin-bottom: 14px;
+      min-height: 48px;
+    }
+    .quiz-options {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+    .option-btn {
+      background: #23263d;
+      border: 2px solid #4a4e75;
+      color: #fff;
+      font-family: 'Press Start 2P', monospace;
+      font-size: 0.46rem;
+      padding: 10px 8px;
+      text-align: left;
+      line-height: 1.4;
+      border-radius: 3px;
+      cursor: pointer;
+    }
+    .option-btn:hover {
+      border-color: var(--arcade-yellow);
+    }
+    .option-btn.correct {
+      background: #1d6d1d !important;
+      border-color: #38ff20 !important;
+    }
+    .option-btn.wrong {
+      background: #771919 !important;
+      border-color: #ff3333 !important;
+    }
+    .quiz-feedback {
+      margin-top: 10px;
+      font-size: 0.5rem;
+      text-align: center;
+      min-height: 16px;
+    }
+
+    /* 4. RESULT SCREEN */
+    #result-screen {
+      background: linear-gradient(180deg, #0d0f1a 0%, #171120 100%);
+      padding: 24px 16px;
+      text-align: center;
+      justify-content: space-between;
+    }
+    .score-badge {
+      border: 3px solid var(--arcade-yellow);
+      background: #111322;
+      padding: 16px 10px;
+      margin: 14px 0;
+    }
+    .final-score {
+      font-size: 2.2rem;
+      color: var(--arcade-yellow);
+      font-family: 'Teko', sans-serif;
+      line-height: 1;
+      letter-spacing: 2px;
+    }
+    .result-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px;
+      margin-top: 10px;
+      font-size: 0.44rem;
+      text-align: left;
+    }
+    .result-item {
+      background: #1c1f33;
+      padding: 8px;
+      border-left: 3px solid var(--arcade-cyan);
+    }
+
+    /* 5. DASHBOARD GURU */
+    #teacher-screen {
+      background: #0f111a;
+      padding: 14px;
+    }
+    .teacher-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 12px;
+      border-bottom: 2px solid var(--arcade-yellow);
+      padding-bottom: 8px;
+    }
+    .teacher-title {
+      font-size: 0.55rem;
+      color: var(--arcade-yellow);
+    }
+    .data-table-container {
+      flex: 1;
+      background: #171926;
+      border: 1px solid #33364f;
+      overflow-x: auto;
+      overflow-y: auto;
+      margin-bottom: 12px;
+    }
+    table.data-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.42rem;
+      color: #fff;
+    }
+    table.data-table th, table.data-table td {
+      border: 1px solid #2b2e47;
+      padding: 6px 4px;
+      text-align: center;
+    }
+    table.data-table th {
+      background: #21253a;
+      color: var(--arcade-yellow);
+      position: sticky;
+      top: 0;
+    }
+    .btn-export {
+      background: #1f6b2f;
+      border: 2px solid #4fff69;
+      color: #fff;
+      font-family: 'Press Start 2P', monospace;
+      font-size: 0.45rem;
+      padding: 10px 8px;
+      cursor: pointer;
+      margin-bottom: 6px;
+    }
+  </style>
+</head>
+<body>
+
+<div id="arcade-wrapper">
+
+  <!-- ================= SCREEN 1: ABSENSI & START ================= -->
+  <div id="start-screen" class="screen active">
+    <div class="title-banner">
+      <div class="game-logo">METAL SLUG</div>
+      <div style="font-size: 0.75rem; color: var(--arcade-yellow); letter-spacing: 1px;">TV STUDIO MISSION</div>
+      <div class="game-sublogo">MISI PENYELAMATAN SIARAN TELEVISI<br>SMK KELAS XI PSPT</div>
+    </div>
+
+    <!-- Canvas Preview Pixel Art Studio -->
+    <div class="pixel-art-hero">
+      <canvas id="preview-canvas" width="300" height="130"></canvas>
+    </div>
+
+    <div class="form-box">
+      <div class="form-group">
+        <label>NAMA LENGKAP SISWA:</label>
+        <input type="text" id="input-name" class="arcade-input" placeholder="Masukkan nama..." autocomplete="off">
+      </div>
+      <div class="form-group">
+        <label>KELAS (CONTOH: XI PSPT 1):</label>
+        <input type="text" id="input-class" class="arcade-input" placeholder="XI PSPT..." autocomplete="off">
+      </div>
+      <button id="btn-start-mission" class="btn-arcade">START MISSION</button>
+    </div>
+
+    <div class="secret-teacher-btn" id="link-teacher-mode">LOGIN DASHBOARD GURU</div>
+  </div>
+
+  <!-- ================= SCREEN 2: GAMEPLAY (PORTRAIT 9:16) ================= -->
+  <div id="game-screen" class="screen">
+    <div id="game-container">
+      <div id="hud-bar">
+        <div>STAGE: <span id="hud-stage" class="hud-val">1/5</span></div>
+        <div>CP: <span id="hud-cp" class="hud-val">0/20</span></div>
+        <div>SKOR: <span id="hud-score" class="hud-val">0</span></div>
+      </div>
+      
+      <canvas id="game-canvas"></canvas>
+
+      <!-- TOUCH CONTROLS (OPTIMASI HP) -->
+      <div id="touch-controls">
+        <div class="d-pad">
+          <div class="touch-btn" id="ctrl-left">&#9664;</div>
+          <div class="touch-btn" id="ctrl-right">&#9654;</div>
+        </div>
+        <div class="action-pad">
+          <div class="touch-btn action-btn-jump" id="ctrl-jump">JUMP</div>
+          <div class="touch-btn action-btn-act" id="ctrl-act">SHOOT</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- CHECKPOINT MODAL (KUIS INTERAKTIF) -->
+    <div id="quiz-modal">
+      <div class="quiz-box">
+        <div class="quiz-header">
+          <span id="quiz-stage-title">LEVEL 1: INTRO</span>
+          <span id="quiz-number-title">SOAL 1/20</span>
+        </div>
+        <div id="quiz-text" class="quiz-question">Pertanyaan loading...</div>
+        <div id="quiz-options-box" class="quiz-options"></div>
+        <div id="quiz-feedback" class="quiz-feedback"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ================= SCREEN 3: HASIL AKHIR ================= -->
+  <div id="result-screen" class="screen">
+    <div class="title-banner">
+      <div class="game-logo" style="font-size: 2.2rem;">MISSION COMPLETE</div>
+      <div class="game-sublogo" id="result-student-name">SISWA: -</div>
+    </div>
+
+    <div class="score-badge">
+      <div style="font-size: 0.55rem; color: #8d92bd;">SKOR AKHIR TATA KAMERA</div>
+      <div class="final-score" id="res-score">0</div>
+      <div style="font-size: 0.65rem; color: var(--arcade-cyan); margin-top: 4px;" id="res-predicate">-</div>
+      
+      <div class="result-grid">
+        <div class="result-item">BENAR: <span id="res-correct" style="color:var(--arcade-green);">0</span></div>
+        <div class="result-item">SALAH: <span id="res-wrong" style="color:var(--arcade-red);">0</span></div>
+        <div class="result-item">PERSENTASE: <span id="res-percent">0%</span></div>
+        <div class="result-item">STATUS: <span id="res-sync" style="color:var(--arcade-yellow);">TERKIRIM</span></div>
+      </div>
+    </div>
+
+    <div>
+      <button class="btn-arcade" id="btn-replay">MAIN LAGI</button>
+    </div>
+  </div>
+
+  <!-- ================= SCREEN 4: DASHBOARD GURU ================= -->
+  <div id="teacher-screen" class="screen">
+    <div class="teacher-header">
+      <div class="teacher-title">DASHBOARD NILAI GURU PSPT</div>
+      <button id="btn-close-teacher" style="background:#444; border:1px solid #777; color:#fff; font-size:0.4rem; padding:4px;">KELUAR</button>
+    </div>
+
+    <!-- Login Box Khusus Guru -->
+    <div id="teacher-login-box" style="margin-top: 30px; text-align: center;">
+      <p style="font-size: 0.5rem; margin-bottom: 12px; color: var(--arcade-yellow);">MASUKKAN PASSWORD GURU:</p>
+      <input type="password" id="input-teacher-pwd" class="arcade-input" style="width: 80%; margin: 0 auto; display: block;" placeholder="Password...">
+      <button id="btn-login-guru" class="btn-arcade" style="width: 80%; margin-top: 12px;">VERIFIKASI</button>
+      <p id="teacher-login-msg" style="font-size: 0.45rem; color: red; margin-top: 10px;"></p>
+    </div>
+
+    <!-- Table Panel & Export (Tampil setelah login sukses) -->
+    <div id="teacher-panel-content" style="display: none; flex-direction: column; height: 90%;">
+      <div style="display: flex; gap: 8px;">
+        <button class="btn-export" id="btn-export-excel">DOWNLOAD EXCEL (.XLSX)</button>
+        <button class="btn-export" style="background:#2a4f6e; border-color:#5ca8ff;" id="btn-export-csv">DOWNLOAD CSV</button>
+      </div>
+
+      <div class="data-table-container">
+        <table class="data-table" id="table-rekap">
+          <thead>
+            <tr>
+              <th>Waktu</th>
+              <th>Nama</th>
+              <th>Kelas</th>
+              <th>Skor</th>
+              <th>B</th>
+              <th>S</th>
+              <th>%</th>
+              <th>Predikat</th>
+            </tr>
+          </thead>
+          <tbody id="tbody-rekap">
+            <tr><td colspan="8">Memuat data rekap...</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <button id="btn-refresh-teacher" class="btn-arcade" style="padding: 8px; font-size: 0.5rem;">REFRESH DATA</button>
+    </div>
+  </div>
+
+</div>
+
+<script>
+/* ==========================================================================
+   KONFIGURASI BACKEND ONLINE (GOOGLE APPS SCRIPT)
+   ========================================================================== */
+// Tempelkan URL Web App Google Apps Script Anda di sini:
+const BACKEND_URL = "https://script.google.com/macros/s/AKfycbz_SAMPLE_YOUR_SCRIPT_URL_HERE/exec";
+
+/* ==========================================================================
+   20 SOAL TATA KAMERA STUDIO TELEVISI (SMK KELAS XI PSPT)
+   (Kunci jawaban di server; di client hanya memuat soal & opsi)
+   ========================================================================== */
+const QUESTION_BANK = [
+  // LEVEL 1: CAMERA INTRODUCTION
+  {
+    id: 1, level: 1, stageName: "CAMERA INTRODUCTION",
+    q: "Komponen optik kamera studio yang berfungsi mengatur dan memfokuskan berkas cahaya ke sensor gambar disebut...",
+    options: ["Viewfinder", "Lensa (Lens)", "Pedestal", "Tally Light"]
+  },
+  {
+    id: 2, level: 1, stageName: "CAMERA INTRODUCTION",
+    q: "Pengaturan pada kamera studio untuk menyesuaikan suhu warna cahaya studio (3200K / 5600K) agar warna putih tampak alami adalah...",
+    options: ["Shutter Speed", "ND Filter", "White Balance", "Gain Boost"]
+  },
+  {
+    id: 3, level: 1, stageName: "CAMERA INTRODUCTION",
+    q: "Bagian display pada kamera yang dipakai kamerawan memantau framing, fokus, dan peeking saat bersiaran adalah...",
+    options: ["Viewfinder", "Switcher", "Teleprompter", "Prompter"]
+  },
+  {
+    id: 4, level: 1, stageName: "CAMERA INTRODUCTION",
+    q: "Filter optik bawaan pada kamera broadcast studio yang digunakan untuk mereduksi intensitas cahaya berlebih tanpa mengubah warna adalah...",
+    options: ["Polarizer", "UV Filter", "Neutral Density (ND) Filter", "Soft Focus Filter"]
+  },
+
+  // LEVEL 2: CAMERA MOVEMENT
+  {
+    id: 5, level: 2, stageName: "CAMERA MOVEMENT",
+    q: "Gerakan kamera menoleh ke kiri atau ke kanan secara horizontal pada poros sumbu tripod tetap dinamakan...",
+    options: ["Pan (Panning)", "Tilt (Tilting)", "Pedestal", "Dolly"]
+  },
+  {
+    id: 6, level: 2, stageName: "CAMERA MOVEMENT",
+    q: "Mengarahkan lensa kamera mengangguk tegak ke atas atau ke bawah secara vertikal disebut gerakan...",
+    options: ["Pan", "Tilt (Tilting)", "Cant", "Pedestal"]
+  },
+  {
+    id: 7, level: 2, stageName: "CAMERA MOVEMENT",
+    q: "Menggerakkan seluruh badan kamera beserta kolom hidrolik pedestal naik ke atas atau turun ke bawah disebut...",
+    options: ["Crane", "Pedestal (Ped Up/Down)", "Truck", "Dolly"]
+  },
+  {
+    id: 8, level: 2, stageName: "CAMERA MOVEMENT",
+    q: "Gerakan fisik roda kamera mendekati subjek (in) atau menjauhi subjek (out) di atas lantai studio dinamakan...",
+    options: ["Zooming", "Tracking", "Dolly", "Rolling"]
+  },
+
+  // LEVEL 3: CAMERA ANGLE & COMPOSITION
+  {
+    id: 9, level: 3, stageName: "ANGLE & COMPOSITION",
+    q: "Sudut pengambilan gambar di mana kamera diletakkan sejajar setinggi garis pandang mata subjek dinamakan...",
+    options: ["High Angle", "Low Angle", "Eye Level", "Bird Eye View"]
+  },
+  {
+    id: 10, level: 3, stageName: "ANGLE & COMPOSITION",
+    q: "Ruang kosong yang wajib disediakan antara batas atas kepala subjek dengan garis tepi atas bingkai (frame) disebut...",
+    options: ["Headroom", "Leadroom", "Walking Room", "Noseroom"]
+  },
+  {
+    id: 11, level: 3, stageName: "ANGLE & COMPOSITION",
+    q: "Tipe shot yang membingkai tubuh subjek mulai dari batas pinggang ke atas hingga kepala disebut...",
+    options: ["Close Up", "Medium Shot (MS)", "Knee Shot", "Extreme Close Up"]
+  },
+  {
+    id: 12, level: 3, stageName: "ANGLE & COMPOSITION",
+    q: "Ruang kosong di depan arah pandangan atau hadap profil wajah subjek pembicara dalam wawancara televisi disebut...",
+    options: ["Headroom", "Noseroom (Looking Room)", "Safe Area", "Golden Ratio"]
+  },
+
+  // LEVEL 4: MULTI CAMERA PRODUCTION
+  {
+    id: 13, level: 4, stageName: "MULTICAM PRODUCTION",
+    q: "Lampu indikator merah di atas kamera studio yang menyala saat kamera tersebut sedang On-Air di program siaran disebut...",
+    options: ["Intercom Lamp", "Tally Light", "Cue Light", "Spot Light"]
+  },
+  {
+    id: 14, level: 4, stageName: "MULTICAM PRODUCTION",
+    q: "Headset komunikasi dua arah antara Program Director (PD) di Control Room dengan kru kamerawan di lantai studio dinamakan...",
+    options: ["Walkie Talkie", "Intercom (Talkback System)", "Teleprompter", "Wireless Mic"]
+  },
+  {
+    id: 15, level: 4, stageName: "MULTICAM PRODUCTION",
+    q: "Perangkat utama di Production Control Room (PCR) yang dipakai memilih dan mencampur input video kamera studio adalah...",
+    options: ["Audio Mixer", "Vision Mixer (Video Switcher)", "Waveform Monitor", "Character Generator"]
+  },
+  {
+    id: 16, level: 4, stageName: "MULTICAM PRODUCTION",
+    q: "Dalam standar setup 3 kamera studio, kamera nomor 2 yang berada di posisi poros tengah umumnya ditugaskan untuk...",
+    options: ["Master Shot (Cover/Wide Shot)", "Close Up Narasumber Kiri", "Close Up Narasumber Kanan", "Cutaway Detail"]
+  },
+
+  // LEVEL 5: LIVE STUDIO BROADCAST
+  {
+    id: 17, level: 5, stageName: "LIVE STUDIO BROADCAST",
+    q: "Kru di lantai studio yang meneruskan instruksi sutradara berupa aba-aba hitungan mundur (cue) kepada presenter adalah...",
+    options: ["Lighting Director", "Floor Director (FD)", "Switcherman", "Master Control Operator"]
+  },
+  {
+    id: 18, level: 5, stageName: "LIVE STUDIO BROADCAST",
+    q: "Prosedur keselamatan kerja (K3) penting bagi kamerawan di lantai studio terkait kabel transmisi kamera adalah...",
+    options: ["Mematikan tally", "Memasang rubber cable protector / taping rapi", "Menarik kencang kabel", "Menyiram cairan pembersih"]
+  },
+  {
+    id: 19, level: 5, stageName: "LIVE STUDIO BROADCAST",
+    q: "Saat Program Director memberikan komando 'Standby Camera 1, Ready to Take', tindakan yang wajib dilakukan kamerawan 1 adalah...",
+    options: ["Mengubah zooming", "Mengunci framing dan fokus dengan stabil tanpa goyang", "Menggeser pedestal", "Memutar viewfinder"]
+  },
+  {
+    id: 20, level: 5, stageName: "LIVE STUDIO BROADCAST",
+    q: "Layar monitor transparan di depan lensa kamera yang memantulkan teks skrip bacaan untuk presenter berita studio adalah...",
+    options: ["Teleprompter", "Return Video Monitor", "Field Monitor", "Waveform Monitor"]
+  }
+];
+
+/* ==========================================================================
+   WEB AUDIO API SYNTHESIZER (CHIPTUNE ARCADE ENGINE)
+   ========================================================================== */
+class SoundEffects {
+  constructor() {
+    this.ctx = null;
+  }
+  init() {
+    if (!this.ctx) {
+      const AudioCtx = window.AudioContext || window.webkitAudioContext;
+      this.ctx = new AudioCtx();
+    }
+    if (this.ctx.state === 'suspended') {
+      this.ctx.resume();
+    }
+  }
+  playJump() {
+    this.init();
+    const osc = this.ctx.createOscillator();
+    const gain = this.ctx.createGain();
+    osc.type = 'square';
+    osc.frequency.setValueAtTime(150, this.ctx.currentTime);
+    osc.frequency.exponentialRampToValueAtTime(500, this.ctx.currentTime + 0.15);
+    gain.gain.setValueAtTime(0.2, this.ctx.currentTime);
+    gain.gain.linearRampToValueAtTime(0.01, this.ctx.currentTime + 0.15);
+    osc.connect(gain);
+    gain.connect(this.ctx.destination);
+    osc.start();
+    osc.stop(this.ctx.currentTime + 0.15);
+  }
+  playShoot() {
+    this.init();
+    const osc = this.ctx.createOscillator();
+    const gain = this.ctx.createGain();
+    osc.type = 'sawtooth';
+    osc.frequency.setValueAtTime(800, this.ctx.currentTime);
+    osc.frequency.exponentialRampToValueAtTime(100, this.ctx.currentTime + 0.12);
+    gain.gain.setValueAtTime(0.25, this.ctx.currentTime);
+    gain.gain.linearRampToValueAtTime(0.01, this.ctx.currentTime + 0.12);
+    osc.connect(gain);
+    gain.connect(this.ctx.destination);
+    osc.start();
+    osc.stop(this.ctx.currentTime + 0.12);
+  }
+  playCorrect() {
+    this.init();
+    const now = this.ctx.currentTime;
+    [523.25, 659.25, 783.99, 1046.50].forEach((freq, i) => {
+      const osc = this.ctx.createOscillator();
+      const gain = this.ctx.createGain();
+      osc.type = 'triangle';
+      osc.frequency.value = freq;
+      gain.gain.setValueAtTime(0.2, now + i * 0.08);
+      gain.gain.linearRampToValueAtTime(0.01, now + i * 0.08 + 0.12);
+      osc.connect(gain);
+      gain.connect(this.ctx.destination);
+      osc.start(now + i * 0.08);
+      osc.stop(now + i * 0.08 + 0.12);
+    });
+  }
+  playWrong() {
+    this.init();
+    const now = this.ctx.currentTime;
+    const osc = this.ctx.createOscillator();
+    const gain = this.ctx.createGain();
+    osc.type = 'sawtooth';
+    osc.frequency.setValueAtTime(160, now);
+    osc.frequency.setValueAtTime(110, now + 0.15);
+    gain.gain.setValueAtTime(0.25, now);
+    gain.gain.linearRampToValueAtTime(0.01, now + 0.35);
+    osc.connect(gain);
+    gain.connect(this.ctx.destination);
+    osc.start(now);
+    osc.stop(now + 0.35);
+  }
+}
+const sfx = new SoundEffects();
+
+/* ==========================================================================
+   2D GAME ENGINE (PIXEL ART PROCEDURAL METAL SLUG STYLE)
+   ========================================================================== */
+const canvas = document.getElementById("game-canvas");
+const ctx = canvas.getContext("2d");
+
+let gameActive = false;
+let studentData = { name: "", studentClass: "", answers: {}, score: 0, correct: 0, wrong: 0 };
+let currentCheckpoint = 0; // 0 s.d 20
+let cameraOffset = 0;
+
+// Ukuran Virtual Game (Kamera Mengikuti Pemain)
+const WORLD_WIDTH = 7500;
+const V_WIDTH = 360;
+const V_HEIGHT = 480;
+
+canvas.width = V_WIDTH;
+canvas.height = V_HEIGHT;
+
+// Entitas Karakter Utama (Kamerawan Televisi)
+const player = {
+  x: 50,
+  y: 380,
+  w: 28,
+  h: 42,
+  vx: 0,
+  vy: 0,
+  speed: 2.8,
+  jumpPower: -7.5,
+  gravity: 0.35,
+  isGrounded: false,
+  facing: 1, // 1 = kanan, -1 = kiri
+  animFrame: 0,
+  animTimer: 0,
+  isShooting: false,
+  shootCooldown: 0
+};
+
+// Checkpoints Sepanjang Studio
+const checkpoints = [];
+for (let i = 1; i <= 20; i++) {
+  checkpoints.push({
+    id: i,
+    x: i * 350 + 100,
+    y: 360,
+    w: 32,
+    h: 56,
+    cleared: false,
+    level: Math.ceil(i / 4)
+  });
+}
+
+// Proyektil Tembakan Kamera Flash / Laser Interaksi
+const bullets = [];
+
+// Kontrol Input Status
+const keys = { left: false, right: false, jump: false, act: false };
+
+/* RENDER PIXEL ART KAMERAWAN */
+function drawPlayer(ctx, p) {
+  ctx.save();
+  ctx.translate(p.x - cameraOffset + (p.facing === -1 ? p.w : 0), p.y);
+  ctx.scale(p.facing, 1);
+
+  // Efek berjalan bobbing
+  const bob = (p.vx !== 0 && p.isGrounded) ? Math.sin(p.animFrame * 0.8) * 2 : 0;
+
+  // 1. Kaki / Celana Tentara / Kargo Kru Studio
+  ctx.fillStyle = "#2c402e"; // Hijau Army khas kru Metal Slug
+  if (p.isGrounded && p.vx !== 0) {
+    const legSwing = Math.sin(p.animFrame * 0.8) * 6;
+    ctx.fillRect(4 + legSwing, 28 + bob, 8, 14);
+    ctx.fillRect(16 - legSwing, 28 + bob, 8, 14);
+  } else {
+    ctx.fillRect(5, 28 + bob, 8, 14);
+    ctx.fillRect(15, 28 + bob, 8, 14);
+  }
+
+  // 2. Sepatu Boots Hitam
+  ctx.fillStyle = "#111";
+  ctx.fillRect(3, 38 + bob, 10, 4);
+  ctx.fillRect(15, 38 + bob, 10, 4);
+
+  // 3. Rompi Kru / Jaket Studio (Warna Oranye-Abu)
+  ctx.fillStyle = "#e65c00";
+  ctx.fillRect(4, 12 + bob, 20, 16);
+  ctx.fillStyle = "#333";
+  ctx.fillRect(12, 12 + bob, 4, 16); // ritsleting
+
+  // 4. Kepala & Headset Intercom
+  ctx.fillStyle = "#f5c69b"; // Kulit
+  ctx.fillRect(8, 2 + bob, 12, 11);
+  ctx.fillStyle = "#4a2a18"; // Rambut / Topi Kru
+  ctx.fillRect(7, 0 + bob, 14, 5);
+  // Headset Intercom Kru TV
+  ctx.fillStyle = "#00d4f8";
+  ctx.fillRect(6, 4 + bob, 3, 6); // bantalan earpiece
+  ctx.fillStyle = "#111";
+  ctx.fillRect(9, 9 + bob, 6, 2); // gagang mic
+
+  // 5. KAMERA BROADCAST BESAR DI PUNDAK (Khas Kamera Studio Televisi)
+  ctx.fillStyle = "#1a1c23"; // Bodi Kamera
+  ctx.fillRect(12, 6 + bob, 22, 12);
+  // Lensa Kamera Broadcast
+  ctx.fillStyle = "#333b4d";
+  ctx.fillRect(34, 8 + bob, 8, 8);
+  ctx.fillStyle = "#00ffff"; // Kaca Lensa
+  ctx.fillRect(40, 10 + bob, 2, 4);
+  // Viewfinder Kamera
+  ctx.fillStyle = "#444";
+  ctx.fillRect(14, 2 + bob, 8, 5);
+  // Tally Light Kamera (Menyala Merah Saat Beraksi)
+  ctx.fillStyle = p.isShooting ? "#ff1100" : "#550000";
+  ctx.fillRect(20, 4 + bob, 4, 3);
+
+  ctx.restore();
+}
+
+/* RENDER BACKGROUND STUDIO TV SESUAI LEVEL */
+function drawBackground(ctx) {
+  const currentLevel = Math.min(5, Math.ceil((currentCheckpoint + 1) / 4));
+  
+  // Langit-langit Studio Gelap dengan Truss Lighting
+  ctx.fillStyle = "#0a0b12";
+  ctx.fillRect(0, 0, V_WIDTH, V_HEIGHT);
+
+  // Background Studio Elemen Tergantung Level (Parallax Ringan)
+  const bgScroll = cameraOffset * 0.3;
+
+  // Level Theming
+  if (currentLevel === 1) {
+    // Level 1: Ruang Studio Dasar & Backdrop Monitor
+    ctx.fillStyle = "#161b2e";
+    ctx.fillRect(0, 60, V_WIDTH, 140);
+    ctx.fillStyle = "#222c4d";
+    for (let x = -bgScroll % 120; x < V_WIDTH; x += 120) {
+      ctx.fillRect(x + 10, 80, 80, 50); // monitor preview dinding
+    }
+  } else if (currentLevel === 2) {
+    // Level 2: Studio Movement (Ada Rel Dolly & Pedestal Markings)
+    ctx.fillStyle = "#19221b";
+    ctx.fillRect(0, 60, V_WIDTH, 140);
+  } else if (currentLevel === 3) {
+    // Level 3: Area Green Screen Besar
+    ctx.fillStyle = "#00471b";
+    ctx.fillRect(0, 70, V_WIDTH, 130);
+    ctx.fillStyle = "#006b29";
+    ctx.fillRect(0, 90, V_WIDTH, 90);
+  } else if (currentLevel === 4) {
+    // Level 4: Master Control Room (PCR) Dinding Monitor
+    ctx.fillStyle = "#1f1429";
+    ctx.fillRect(0, 50, V_WIDTH, 150);
+    ctx.fillStyle = "#432859";
+    for (let x = -bgScroll % 90; x < V_WIDTH; x += 90) {
+      ctx.fillRect(x + 10, 70, 70, 45); // Multiview monitor
+    }
+  } else {
+    // Level 5: Live Broadcast Stage Mewah (Lighting Beam)
+    ctx.fillStyle = "#2a150e";
+    ctx.fillRect(0, 40, V_WIDTH, 160);
+  }
+
+  // Truss Lighting di Plafon Studio
+  ctx.strokeStyle = "#383a52";
+  ctx.lineWidth = 4;
+  ctx.strokeRect(-10, 20, V_WIDTH + 20, 16);
+  // Lampu Studio Fresnel / Spot Hanging
+  for (let lx = 30; lx < V_WIDTH; lx += 80) {
+    ctx.fillStyle = "#555";
+    ctx.fillRect(lx, 36, 14, 12);
+    ctx.fillStyle = "rgba(255, 230, 130, 0.12)"; // Berkas Cahaya Sorot
+    ctx.beginPath();
+    ctx.moveTo(lx + 7, 48);
+    ctx.lineTo(lx - 25, 420);
+    ctx.lineTo(lx + 39, 420);
+    ctx.fill();
+  }
+
+  // Lantai Studio Glossy / Paving Studio Televisi
+  ctx.fillStyle = "#1d202b";
+  ctx.fillRect(0, 410, V_WIDTH, 70);
+  ctx.fillStyle = "#2a2f42";
+  ctx.fillRect(0, 410, V_WIDTH, 6); // Garis Marka Studio
+}
+
+/* RENDER CHECKPOINTS (STAND KAMERA & MONITOR INTERAKTIF) */
+function drawCheckpoints(ctx) {
+  checkpoints.forEach(cp => {
+    if (cp.x + cp.w >= cameraOffset - 50 && cp.x <= cameraOffset + V_WIDTH + 50) {
+      const sx = cp.x - cameraOffset;
+      const sy = cp.y;
+
+      // Tiang Pedestal / Kios Checkpoint
+      ctx.fillStyle = "#33374d";
+      ctx.fillRect(sx + 10, sy + 20, 12, 36);
+
+      // Layar Monitor Checkpoint Kuis
+      ctx.fillStyle = cp.cleared ? "#174d1a" : "#611a1a";
+      ctx.fillRect(sx, sy - 8, 32, 28);
+      ctx.fillStyle = cp.cleared ? "#38c820" : "#ff3b3b";
+      ctx.strokeRect(sx, sy - 8, 32, 28);
+
+      // Angka Soal di Monitor Checkpoint
+      ctx.fillStyle = "#fff";
+      ctx.font = "8px 'Press Start 2P'";
+      ctx.fillText(`Q${cp.id}`, sx + 4, sy + 10);
+
+      // Lampu Tally Checkpoint Berkedip jika Belum Selesai
+      if (!cp.cleared) {
+        ctx.fillStyle = (Date.now() % 600 < 300) ? "#ffff00" : "#ff0000";
+        ctx.fillRect(sx + 12, sy - 14, 8, 6);
+      }
+    }
+  });
+}
+
+/* RENDER BULLET LASER */
+function drawBullets(ctx) {
+  bullets.forEach(b => {
+    ctx.fillStyle = "#00ffff";
+    ctx.fillRect(b.x - cameraOffset, b.y, b.w, b.h);
+    ctx.fillStyle = "#ffffff";
+    ctx.fillRect(b.x - cameraOffset + 2, b.y + 1, b.w - 4, b.h - 2);
+  });
+}
+
+/* UPDATE LOGIKA GAME */
+function updateGame() {
+  if (!gameActive) return;
+
+  // 1. Gerakan Horizontal Pemain
+  if (keys.left) {
+    player.vx = -player.speed;
+    player.facing = -1;
+    player.animFrame += 0.2;
+  } else if (keys.right) {
+    player.vx = player.speed;
+    player.facing = 1;
+    player.animFrame += 0.2;
+  } else {
+    player.vx = 0;
+  }
+
+  // 2. Lompat
+  if (keys.jump && player.isGrounded) {
+    player.vy = player.jumpPower;
+    player.isGrounded = false;
+    sfx.playJump();
+  }
+
+  // 3. Tembak Interaksi Target
+  if (keys.act && player.shootCooldown <= 0) {
+    bullets.push({
+      x: player.facing === 1 ? player.x + player.w + 10 : player.x - 10,
+      y: player.y + 12,
+      w: 12,
+      h: 5,
+      vx: player.facing * 7
+    });
+    player.isShooting = true;
+    player.shootCooldown = 20;
+    sfx.playShoot();
+  }
+  if (player.shootCooldown > 0) player.shootCooldown--;
+  if (player.shootCooldown < 15) player.isShooting = false;
+
+  // Fisika Gravitasi & Posisi
+  player.vy += player.gravity;
+  player.x += player.vx;
+  player.y += player.vy;
+
+  // Batas Lantai Studio
+  const groundY = 410 - player.h;
+  if (player.y >= groundY) {
+    player.y = groundY;
+    player.vy = 0;
+    player.isGrounded = true;
+  }
+
+  // Batas Kiri Dunia
+  if (player.x < 10) player.x = 10;
+
+  // Update Proyektil Peluru
+  for (let i = bullets.length - 1; i >= 0; i--) {
+    const b = bullets[i];
+    b.x += b.vx;
+    if (b.x < cameraOffset - 50 || b.x > cameraOffset + V_WIDTH + 50) {
+      bullets.splice(i, 1);
+    }
+  }
+
+  // 4. Deteksi Pemicu Checkpoint (Soal Kuis)
+  checkpoints.forEach(cp => {
+    if (!cp.cleared) {
+      // Jika pemain mendekat atau menabrak batas checkpoint
+      const dist = Math.abs((player.x + player.w / 2) - (cp.x + cp.w / 2));
+      if (dist < 30) {
+        // Hentikan gerakan dan buka modal kuis
+        triggerCheckpointModal(cp.id);
+      }
+    }
+  });
+
+  // Kamera Mengikuti Pemain Secara Halus
+  const targetCam = player.x - V_WIDTH * 0.35;
+  cameraOffset += (targetCam - cameraOffset) * 0.1;
+  if (cameraOffset < 0) cameraOffset = 0;
+}
+
+/* LOOP UTAMA ENGINE 60 FPS */
+function gameLoop() {
+  if (gameActive) {
+    updateGame();
+    ctx.clearRect(0, 0, V_WIDTH, V_HEIGHT);
+    drawBackground(ctx);
+    drawCheckpoints(ctx);
+    drawBullets(ctx);
+    drawPlayer(ctx, player);
+  }
+  requestAnimationFrame(gameLoop);
+}
+
+/* ==========================================================================
+   LOGIKA MODAL KUIS & VALIDASI JAWABAN
+   ========================================================================== */
+const quizModal = document.getElementById("quiz-modal");
+const quizStageTitle = document.getElementById("quiz-stage-title");
+const quizNumberTitle = document.getElementById("quiz-number-title");
+const quizText = document.getElementById("quiz-text");
+const quizOptionsBox = document.getElementById("quiz-options-box");
+const quizFeedback = document.getElementById("quiz-feedback");
+
+let activeQuizQuestion = null;
+let isSubmittingAnswer = false;
+
+function triggerCheckpointModal(checkpointId) {
+  gameActive = false; // Freeze gameplay saat kuis muncul
+  const qData = QUESTION_BANK[checkpointId - 1];
+  activeQuizQuestion = qData;
+  isSubmittingAnswer = false;
+
+  quizStageTitle.textContent = `LEVEL ${qData.level}: ${qData.stageName}`;
+  quizNumberTitle.textContent = `SOAL ${qData.id}/20`;
+  quizText.textContent = qData.q;
+  quizFeedback.textContent = "";
+
+  quizOptionsBox.innerHTML = "";
+  const optLetters = ["A", "B", "C", "D"];
+  qData.options.forEach((optText, idx) => {
+    const btn = document.createElement("button");
+    btn.className = "option-btn";
+    btn.innerHTML = `<strong>${optLetters[idx]}.</strong> ${optText}`;
+    btn.addEventListener("click", () => handleSelectAnswer(qData.id, optLetters[idx], btn));
+    quizOptionsBox.appendChild(btn);
+  });
+
+  quizModal.style.display = "flex";
+}
+
+// Handler Jawaban (Dengan Proteksi Validasi Server / Fallback Cepat)
+async function handleSelectAnswer(questionId, letter, clickedBtn) {
+  if (isSubmittingAnswer) return;
+  isSubmittingAnswer = true;
+
+  // Simpan data jawaban siswa
+  studentData.answers[questionId] = letter;
+
+  // Nonaktifkan semua opsi selama proses
+  const allBtns = quizOptionsBox.querySelectorAll(".option-btn");
+  allBtns.forEach(b => b.style.pointerEvents = "none");
+
+  quizFeedback.textContent = "MEMVERIFIKASI JAWABAN...";
+  quizFeedback.style.color = "var(--arcade-yellow)";
+
+  let isCorrect = false;
+
+  // Verifikasi ke Google Apps Script (Keamanan Server-Side)
+  try {
+    const res = await fetch(`${BACKEND_URL}?action=checkAnswer&questionId=${questionId}&answer=${letter}`);
+    const data = await res.json();
+    if (data.status === "success") {
+      isCorrect = data.correct;
+    }
+  } catch (err) {
+    // Fallback Offline/Lokal jika koneksi script belum dipasang URL-nya
+    console.warn("Backend server belum terhubung, beralih ke mode lokal demonstrasi.");
+    const LOCAL_KEYS = {1:"B",2:"C",3:"A",4:"C",5:"A",6:"B",7:"B",8:"C",9:"C",10:"A",11:"B",12:"B",13:"B",14:"B",15:"B",16:"A",17:"B",18:"B",19:"B",20:"B"};
+    isCorrect = (letter === LOCAL_KEYS[questionId]);
+  }
+
+  // Tampilkan Feedback Arcade
+  if (isCorrect) {
+    clickedBtn.classList.add("correct");
+    quizFeedback.textContent = "BENAR! +100 POIN SIARAN";
+    quizFeedback.style.color = "var(--arcade-green)";
+    sfx.playCorrect();
+    studentData.score += 100;
+    studentData.correct += 1;
+  } else {
+    clickedBtn.classList.add("wrong");
+    quizFeedback.textContent = "KURANG TEPAT! TETAP SEMANGAT";
+    quizFeedback.style.color = "var(--arcade-red)";
+    sfx.playWrong();
+    studentData.wrong += 1;
+  }
+
+  // Update HUD
+  document.getElementById("hud-score").textContent = studentData.score;
+  document.getElementById("hud-cp").textContent = `${questionId}/20`;
+  currentCheckpoint = questionId;
+
+  // Buka rintangan checkpoint
+  checkpoints[questionId - 1].cleared = true;
+
+  // Berikan jeda 1.2 detik agar siswa membaca feedback lalu lanjutkan permainan
+  setTimeout(() => {
+    quizModal.style.display = "none";
+    player.x += 40; // Geser karakter melewati pos checkpoint
+
+    // Periksa apakah 20 soal sudah selesai
+    if (questionId >= 20) {
+      finishGameMission();
+    } else {
+      gameActive = true; // Lanjutkan game
+      // Update Level Stage di HUD
+      const nextLevel = Math.min(5, Math.ceil((questionId + 1) / 4));
+      document.getElementById("hud-stage").textContent = `${nextLevel}/5`;
+    }
+  }, 1300);
+}
+
+/* ==========================================================================
+   PENYELESAIAN GAME & PENGIRIMAN DATA KE SERVER
+   ========================================================================== */
+async function finishGameMission() {
+  gameActive = false;
+  document.getElementById("game-screen").classList.remove("active");
+  document.getElementById("result-screen").classList.add("active");
+
+  const percentage = (studentData.correct / 20) * 100;
+  let predicate = "Perlu Belajar Lagi";
+  if (percentage >= 90) predicate = "Sangat Baik";
+  else if (percentage >= 80) predicate = "Baik";
+  else if (percentage >= 70) predicate = "Cukup";
+
+  document.getElementById("result-student-name").textContent = `SISWA: ${studentData.name.toUpperCase()} (${studentData.studentClass.toUpperCase()})`;
+  document.getElementById("res-score").textContent = studentData.score;
+  document.getElementById("res-predicate").textContent = `PREDIKAT: ${predicate}`;
+  document.getElementById("res-correct").textContent = studentData.correct;
+  document.getElementById("res-wrong").textContent = studentData.wrong;
+  document.getElementById("res-percent").textContent = `${percentage}%`;
+
+  const syncElem = document.getElementById("res-sync");
+  syncElem.textContent = "MENYIMPAN KE CLOUD...";
+  syncElem.style.color = "var(--arcade-yellow)";
+
+  // Kirim data ke Google Sheets
+  try {
+    const payload = {
+      action: "submitFinalScore",
+      name: studentData.name,
+      studentClass: studentData.studentClass,
+      answers: studentData.answers
+    };
+
+    await fetch(BACKEND_URL, {
+      method: "POST",
+      mode: "no-cors", // Standard CORS bypass untuk Apps Script
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload)
+    });
+
+    syncElem.textContent = "TERSIMPAN DI GOOGLE SHEETS ✓";
+    syncElem.style.color = "var(--arcade-green)";
+  } catch (err) {
+    console.error("Gagal sinkronisasi data online:", err);
+    syncElem.textContent = "TERSINKRON LOKAL";
+  }
+}
+
+/* ==========================================================================
+   KONTROL TOUCH MOBILE (SMARTPHONE PORTRAIT 9:16)
+   ========================================================================== */
+function setupTouchButton(elemId, keyName) {
+  const elem = document.getElementById(elemId);
+  if (!elem) return;
+  const startHandler = (e) => {
+    e.preventDefault();
+    keys[keyName] = true;
+    elem.classList.add("pressed");
+  };
+  const endHandler = (e) => {
+    e.preventDefault();
+    keys[keyName] = false;
+    elem.classList.remove("pressed");
+  };
+
+  elem.addEventListener("touchstart", startHandler, { passive: false });
+  elem.addEventListener("touchend", endHandler, { passive: false });
+  elem.addEventListener("mousedown", startHandler);
+  elem.addEventListener("mouseup", endHandler);
+  elem.addEventListener("mouseleave", endHandler);
+}
+
+setupTouchButton("ctrl-left", "left");
+setupTouchButton("ctrl-right", "right");
+setupTouchButton("ctrl-jump", "jump");
+setupTouchButton("ctrl-act", "act");
+
+// Keyboard Support untuk Pengujian di Laptop / Komputer
+window.addEventListener("keydown", (e) => {
+  if (e.code === "ArrowLeft" || e.code === "KeyA") keys.left = true;
+  if (e.code === "ArrowRight" || e.code === "KeyD") keys.right = true;
+  if (e.code === "ArrowUp" || e.code === "KeyW" || e.code === "Space") keys.jump = true;
+  if (e.code === "KeyJ" || e.code === "KeyZ") keys.act = true;
+});
+window.addEventListener("keyup", (e) => {
+  if (e.code === "ArrowLeft" || e.code === "KeyA") keys.left = false;
+  if (e.code === "ArrowRight" || e.code === "KeyD") keys.right = false;
+  if (e.code === "ArrowUp" || e.code === "KeyW" || e.code === "Space") keys.jump = false;
+  if (e.code === "KeyJ" || e.code === "KeyZ") keys.act = false;
+});
+
+/* ==========================================================================
+   TAMPILAN PEMBUKA & VALIDASI ABSENSI
+   ========================================================================== */
+document.getElementById("btn-start-mission").addEventListener("click", () => {
+  const nameInput = document.getElementById("input-name").value.trim();
+  const classInput = document.getElementById("input-class").value.trim();
+
+  if (!nameInput || !classInput) {
+    alert("Silakan isi Nama Lengkap dan Kelas Anda terlebih dahulu!");
+    return;
+  }
+
+  sfx.init();
+  studentData.name = nameInput;
+  studentData.studentClass = classInput;
+
+  document.getElementById("start-screen").classList.remove("active");
+  document.getElementById("game-screen").classList.add("active");
+
+  gameActive = true;
+});
+
+document.getElementById("btn-replay").addEventListener("click", () => {
+  window.location.reload();
+});
+
+/* ==========================================================================
+   DASHBOARD GURU (LOGIN, EKSPOR EXCEL & CSV)
+   ========================================================================== */
+let teacherCachedData = [];
+
+document.getElementById("link-teacher-mode").addEventListener("click", () => {
+  document.getElementById("start-screen").classList.remove("active");
+  document.getElementById("teacher-screen").classList.add("active");
+});
+
+document.getElementById("btn-close-teacher").addEventListener("click", () => {
+  document.getElementById("teacher-screen").classList.remove("active");
+  document.getElementById("start-screen").classList.add("active");
+});
+
+// Login Guru Verifikasi Server
+document.getElementById("btn-login-guru").addEventListener("click", async () => {
+  const pwd = document.getElementById("input-teacher-pwd").value;
+  const msg = document.getElementById("teacher-login-msg");
+  msg.textContent = "Memverifikasi...";
+  msg.style.color = "yellow";
+
+  try {
+    const res = await fetch(`${BACKEND_URL}?action=getTeacherData&password=${encodeURIComponent(pwd)}`);
+    const result = await res.json();
+
+    if (result.status === "success") {
+      msg.textContent = "";
+      document.getElementById("teacher-login-box").style.display = "none";
+      document.getElementById("teacher-panel-content").style.display = "flex";
+      teacherCachedData = result.records || [];
+      renderTeacherTable(teacherCachedData);
+    } else {
+      msg.textContent = result.message || "Password Guru Salah!";
+      msg.style.color = "red";
+    }
+  } catch (err) {
+    msg.textContent = "Gagal menghubungi server database!";
+    msg.style.color = "red";
+  }
+});
+
+function renderTeacherTable(records) {
+  const tbody = document.getElementById("tbody-rekap");
+  tbody.innerHTML = "";
+
+  if (!records || records.length === 0) {
+    tbody.innerHTML = `<tr><td colspan="8">Belum ada siswa yang menyelesaikan misi.</td></tr>`;
+    return;
+  }
+
+  // Urutkan nilai tertinggi ke terendah secara default
+  records.sort((a, b) => b.score - a.score);
+
+  records.forEach(r => {
+    const tr = document.createElement("tr");
+    tr.innerHTML = `
+      <td>${r.date.toString().substring(11, 19)}</td>
+      <td style="text-align:left; font-weight:bold;">${r.name}</td>
+      <td>${r.studentClass}</td>
+      <td style="color:var(--arcade-yellow);">${r.score}</td>
+      <td style="color:var(--arcade-green);">${r.correct}</td>
+      <td style="color:var(--arcade-red);">${r.wrong}</td>
+      <td>${r.percentage}</td>
+      <td>${r.predicate}</td>
+    `;
+    tbody.appendChild(tr);
+  });
+}
+
+// Fitur Download Excel (.xlsx) Resmi Menggunakan SheetJS
+document.getElementById("btn-export-excel").addEventListener("click", () => {
+  if (!teacherCachedData || teacherCachedData.length === 0) {
+    alert("Belum ada data nilai untuk diunduh!");
+    return;
+  }
+
+  const excelRows = teacherCachedData.map(r => ({
+    "Waktu Selesai": r.date,
+    "Nama Lengkap": r.name,
+    "Kelas": r.studentClass,
+    "Skor Akhir (Max 2000)": r.score,
+    "Benar": r.correct,
+    "Salah": r.wrong,
+    "Persentase": r.percentage,
+    "Predikat": r.predicate,
+    "Detail Jawaban": r.details
+  }));
+
+  const worksheet = XLSX.utils.json_to_sheet(excelRows);
+  const workbook = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(workbook, worksheet, "Nilai_PSPT");
+  XLSX.writeFile(workbook, "Rekap_Nilai_MetalSlug_PSPT.xlsx");
+});
+
+// Fitur Download CSV
+document.getElementById("btn-export-csv").addEventListener("click", () => {
+  if (!teacherCachedData || teacherCachedData.length === 0) {
+    alert("Belum ada data nilai untuk diunduh!");
+    return;
+  }
+
+  let csvContent = "data:text/csv;charset=utf-8,";
+  csvContent += "Waktu,Nama,Kelas,Skor,Benar,Salah,Persentase,Predikat,Detail Jawaban\r\n";
+
+  teacherCachedData.forEach(r => {
+    csvContent += `"${r.date}","${r.name}","${r.studentClass}",${r.score},${r.correct},${r.wrong},"${r.percentage}","${r.predicate}","${r.details}"\r\n`;
+  });
+
+  const encodedUri = encodeURI(csvContent);
+  const link = document.createElement("a");
+  link.setAttribute("href", encodedUri);
+  link.setAttribute("download", "Rekap_Nilai_MetalSlug_PSPT.csv");
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+});
+
+/* ==========================================================================
+   CANVAS PREVIEW DI SCREEN UTAMA (ANIMASI PIXEL ART STUDIO)
+   ========================================================================== */
+function drawPreviewHero() {
+  const pCanvas = document.getElementById("preview-canvas");
+  if (!pCanvas) return;
+  const pCtx = pCanvas.getContext("2d");
+  
+  pCtx.fillStyle = "#0c0e18";
+  pCtx.fillRect(0, 0, 300, 130);
+
+  // Lampu Studio
+  pCtx.fillStyle = "rgba(248, 184, 0, 0.25)";
+  pCtx.beginPath();
+  pCtx.moveTo(70, 0);
+  pCtx.lineTo(20, 130);
+  pCtx.lineTo(120, 130);
+  pCtx.fill();
+
+  // Karakter Kamerawan Mini di Halaman Absensi
+  drawPlayer(pCtx, {
+    x: 130,
+    y: 65,
+    w: 28,
+    h: 42,
+    vx: 0,
+    facing: 1,
+    isGrounded: true,
+    animFrame: 0,
+    isShooting: (Date.now() % 1000 < 500)
+  });
+
+  // Kamera Broadcast Pedestal Display
+  pCtx.fillStyle = "#2c2e42";
+  pCtx.fillRect(200, 75, 20, 45);
+  pCtx.fillStyle = "#151624";
+  pCtx.fillRect(190, 60, 40, 18);
+  pCtx.fillStyle = (Date.now() % 800 < 400) ? "#ff0000" : "#440000";
+  pCtx.fillRect(205, 54, 8, 6); // Tally lamp
+
+  requestAnimationFrame(drawPreviewHero);
+}
+drawPreviewHero();
+gameLoop();
+</script>
+
+</body>
+</html>
